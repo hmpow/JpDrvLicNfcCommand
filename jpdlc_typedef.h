@@ -1,7 +1,9 @@
 #ifndef JP_DRV_LIC_NFC_COMMAND_TYPEDEF_H
 #define JP_DRV_LIC_NFC_COMMAND_TYPEDEF_H
 
-#define DLC_LAYER_DEBUG
+/* デバッグモード設定 */
+//#define DLC_LAYER_DEBUG
+#define DLC_LAYER_SHOW_COMMUNICATION_FRAME
 
 #include <vector>
 #include <array>

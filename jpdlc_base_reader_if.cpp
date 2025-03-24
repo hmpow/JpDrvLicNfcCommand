@@ -1,5 +1,7 @@
 #include "jpdlc_base_reader_if.h"
 
+const uint16_t READER_TIMEOUT_MS = 200; //マイナ免許証は長めにしないとダメ
+
 //カードリーダのインスタンスはmain.cppの持ち物なのでポインタで
 Rcs660sAppIf *p_rcs660sInstance;
 
@@ -24,7 +26,7 @@ std::vector<type_data_byte> _nfcTransceive(const std::vector<type_data_byte> inp
         command.push_back( (type_data_byte)inputCommand[i] );
     }
 
-#ifdef DLC_LAYER_DEBUG
+#ifdef DLC_LAYER_SHOW_COMMUNICATION_FRAME
     printf("Tx To Card : ");
     for(const auto& comByte : command){
         printf("%02X ",comByte);
@@ -33,9 +35,9 @@ std::vector<type_data_byte> _nfcTransceive(const std::vector<type_data_byte> inp
 #endif
 
     std::vector<uint8_t> orgResponse;
-    orgResponse = p_rcs660sInstance->communicateNfc(command, comLen);  
+    orgResponse = p_rcs660sInstance->communicateNfc(command, READER_TIMEOUT_MS);  
 
-#ifdef DLC_LAYER_DEBUG
+#ifdef DLC_LAYER_SHOW_COMMUNICATION_FRAME
     printf("Rx From Card : ");
     for(const auto& comByte : orgResponse){
         printf("%02X ",comByte);
@@ -75,10 +77,7 @@ std::vector<type_data_byte> _nfcTransceive_Stub(const std::vector<type_data_byte
         wrong_P1P2
     };
 
-
-    
-    printf("\r\n");
-    printf("Stub_nfcTransceive\r\n");
+    printf("\r\n\r\n\r\n\r\n\r\nStub_nfcTransceive\r\n\r\n\r\n\r\n\r\n\r\n");
     printf("\r\n");
     std::vector<type_data_byte> command;
     std::vector<type_data_byte> retResponse;
@@ -115,6 +114,7 @@ std::vector<type_data_byte> _nfcTransceive_Stub(const std::vector<type_data_byte
         printf("Stub_Rx From Card : empty Vector");
     }
 
+    printf("\r\n");
     printf("\r\n");
 
     return retResponse;

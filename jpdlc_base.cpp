@@ -49,7 +49,9 @@ std::vector<type_data_byte> JpDrvLicNfcCommandBase::readBinary_currentFile_speci
         responseTag = 0x00;
 
         //Tag解析
-        printf("タグ探し関数 次の指示offset = %04X\n", currentOffset);
+        #ifdef DLC_LAYER_DEBUG
+            printf("タグ探し関数 次の指示offset = %04X\n", currentOffset);
+        #endif
         
 
         cardResVect = parseResponseReadBinary(
@@ -65,7 +67,9 @@ std::vector<type_data_byte> JpDrvLicNfcCommandBase::readBinary_currentFile_speci
 
         //Tag解析
         responseTag = cardResVect[0];
-        printf("タグ探し関数 tag = %02X\n", responseTag);
+        #ifdef DLC_LAYER_DEBUG
+            printf("タグ探し関数 tag = %02X\n", responseTag);
+        #endif
         
         //Len解析
         //Lenの頭がTWO_BYTE_LEN_FLAG(0x82)の時はLenが0x82に続く2バイト
@@ -83,13 +87,15 @@ std::vector<type_data_byte> JpDrvLicNfcCommandBase::readBinary_currentFile_speci
             }
             //2バイトLEN
             len = (uint16_t)(cardResVect[0]) << 8 | (uint16_t)(cardResVect[1]);
-
+        #ifdef DLC_LAYER_DEBUG
             printf("タグ探し関数 2バイトlen = %04X\n", len);
+        #endif
         }else{
             //1バイトLEN
             len = (uint16_t)cardResVect[1];
-
+        #ifdef DLC_LAYER_DEBUG
             printf("タグ探し関数 1バイトlen = %04X\n", len);
+        #endif
         }
 
         currentOffset += 2; //tagとlen分 or 2バイトLen分進める
@@ -120,6 +126,24 @@ std::vector<type_data_byte> JpDrvLicNfcCommandBase::readBinary_currentFile_speci
     //読めたらリターンするのでここには来ないはず
 
     return retVect;
+}
+
+
+bool JpDrvLicNfcCommandBase::executeVerify_DecimalInput(type_PIN pinDecimal){
+    
+    type_PIN pinJisX0201 = {0,0,0,0};
+
+    for(int i = 0; i < 4; i++){
+        if(0 <= pinDecimal[i] && pinDecimal[i] <= 9){
+            //0～9
+            pinJisX0201[i] = intTojisX0201(pinDecimal[i]);
+        }else{
+            //0～9でないデータが入っていた
+            return false;
+        }
+    }
+
+    return executeVerify(pinJisX0201);
 }
 
 /*******************************************************************************/
@@ -319,7 +343,9 @@ std::vector<type_data_byte> JpDrvLicNfcCommandBase::parseResponseReadBinary(std:
 
     if(cardRes[len-2] == STATUS_SUCCESS.sw1 && cardRes[len-1] == STATUS_SUCCESS.sw2){
     
-        if(SHOW_DEBUG){printf("Card Status OK! %02X %02X\r\n",cardRes[len-2],cardRes[len-1]);}
+        #ifdef DLC_LAYER_DEBUG
+            printf("Card Status OK! %02X %02X\r\n",cardRes[len-2],cardRes[len-1]);
+        #endif
     
         for (uint16_t i = 0; i < len - 2; i++)
         {
@@ -330,7 +356,9 @@ std::vector<type_data_byte> JpDrvLicNfcCommandBase::parseResponseReadBinary(std:
 
     }else{
         
-        if(SHOW_DEBUG){printf("Card Status ERROR! %02X %02X\r\n",cardRes[len-2],cardRes[len-1]);}
+        #ifdef DLC_LAYER_DEBUG
+            printf("Card Status ERROR! %02X %02X\r\n",cardRes[len-2],cardRes[len-1]);
+        #endif
         return retVect; //空のベクター
     }
 }

@@ -35,24 +35,19 @@ public:
 
     /* 共通 */
     std::vector<type_data_byte> readBinary_currentFile_specifiedTag(type_tag); //tag指定で読んでlen分進めてってやる関数
-    
-    /* 種別ごと */
+
+    bool executeVerify_DecimalInput(type_PIN);  //10進入力でPIN認証を実行　あくまでも仕様はJISX0201で照合なのでこちらがオプション
+    // PINがJIS X 0201なのはマイナ・従来共通のためbaseクラス側に設置 種別ごと実装を内部で呼ぶ
+
+
+    /* ディレクトリ構造・書式などが従来・マイナで異なるため子クラスで実装が必要 */
     virtual JPDLC_ISSET_PIN_STATUS issetPin(void)          = 0;  //PIN設定EFをSELECTしてREADBINARY
-    virtual bool                   isDrvLicCard(void)      = 0;  //運転免許証かどうか
-    virtual JPDLC_EXPIRATION_DATA  getExpirationData(void) = 0;  //有効期限情報を取得
-    virtual uint8_t                getRemainingCount(void) = 0;  //残り試行回数を取得
-    virtual bool                   executeVerify(type_PIN) = 0;  //PIN認証を実行
+    virtual bool                   isDrvLicCard(void)      = 0;  //3つのAIDがあるかSELECTして確認
+    virtual JPDLC_EXPIRATION_DATA  getExpirationData(void) = 0;  //有効期限情報をSELECTしてREADBINARYして書式変換
+    virtual uint8_t                getRemainingCount(void) = 0;  //PINをSELECTしてボディーなしVERIFYで残り試行回数を取得
+    virtual bool                   executeVerify(type_PIN) = 0;  //PINをSECECTしてVERIFY実行
 
-/* memo */
-/* 子クラスだけで実装したいvirtualたちがリンクエラーになる件についてChatGPTと会話 */
-/* Javaで言うabstractを実現するためには「純粋仮想関数」というのを用いると良い */
-/* 書き方は virtual 付けて宣言 し、= 0 を付ける */
-/* 単なる仮想関数だと、親クラス側のcppに実装がないと*/
-/* いざオーバーライドしようと思った時に対象が居ないのでundefinedになる */
-/* 対応としては親クラスの .cpp に 何もしない 関数を実装 */
-/* しかし可読性が悪いので、純粋仮想関数を使った方が良い */
-
-
+ 
     /********************************* SELECT FILE *********************************/
 
     std::vector<type_data_byte>  assemblyCommandSelectFile_fullEfId(type_full_efid);

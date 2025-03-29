@@ -1,3 +1,9 @@
+/**
+ * @file  jpdlc_conventional.h
+ * @brief 従来免許証のコマンドクラス
+ * @note  従来免許証を使いたい場合にincludeする
+ */
+
 #ifndef JP_DRV_LIC_NFC_COMMAND_CONVENTIONAL_H
 #define JP_DRV_LIC_NFC_COMMAND_CONVENTIONAL_H
 

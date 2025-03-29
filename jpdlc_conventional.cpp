@@ -1,3 +1,9 @@
+/**
+ * @file jpdlc_conventional.cpp
+ * @brief 従来免許証のコマンドクラス実装
+ */
+
+
 #include "jpdlc_conventional.h"
 
 /***************/
@@ -41,7 +47,66 @@ const type_data_byte REIWA_CODE               = 0x05;   //免許証仕様上の�
 const type_data_byte EF02_PIN_SETTING_ON      = 0x01;   //仕様書指定値 PIN設定ありの場合
 const type_data_byte EF02_PIN_SETTING_OFF     = 0x00;   //仕様書指定値 PIN設定無しの場合
 
+/**
+ * @brief  タッチされたNFC-TypeBカードが従来免許証であるか確認する
+ * @param  なし
+ * @retval true  : 従来免許証である
+ * @retval false : 従来免許証ではない
+ * @note   カードリーダがType-Bを捕捉し、通信確立された状態で実行する
+ *  　　　　従来免許証ならあるはずの3つのAIDをお試し SELECT し、成功するか確認する
+ */
+bool JpDrvLicNfcCommandConventional::isDrvLicCard(void){
 
+    JPDLC_CARD_STATUS card_status = JPDLC_STATUS_ERROR;
+
+    //AID_DF1 があるか
+    card_status = parseResponseSelectFile(
+        _nfcTransceive(
+            assemblyCommandSelectFile_AID(AID_DF1, sizeof(AID_DF1)/sizeof(AID_DF1[0]))
+        )
+    );
+
+    if(card_status == JPDLC_STATUS_ERROR){
+        return false;
+    }
+
+    //AID_DF2 があるか
+    card_status = parseResponseSelectFile(
+        _nfcTransceive(
+            assemblyCommandSelectFile_AID(AID_DF2, sizeof(AID_DF2)/sizeof(AID_DF2[0]))
+        )
+    );
+
+    if(card_status == JPDLC_STATUS_ERROR){
+        return false;
+    }
+
+    //AID_DF3 があるか
+    card_status = parseResponseSelectFile(
+        _nfcTransceive(
+            assemblyCommandSelectFile_AID(AID_DF3, sizeof(AID_DF3)/sizeof(AID_DF3[0]))
+        )
+    );
+
+    if(card_status == JPDLC_STATUS_ERROR){
+        return false;
+    }
+
+    //ここまでreturn されなければOK
+    return true;
+}
+
+
+/**
+ * @brief  従来免許証に PIN 1 が設定されているか確認する
+ * @param  なし
+ * @retval PIN_ERROR   : 読み取りエラー
+ * @retval PIN_NOT_SET : PIN 1 が設定されていない
+ * @retval PIN_SET     : PIN 1 が設定されている
+ * @note   従来免許証と通信確立された状態で実行する
+ *         指定PINかDPINかどちらで照合すべきか判断するために用いる
+ *         エラーをDPINと思い込んで照合すると閉塞するため、bool返却ではなくエラーを明確に分けた
+ */
 JPDLC_ISSET_PIN_STATUS JpDrvLicNfcCommandConventional::issetPin(void){
     
     //MFをセレクト
@@ -89,48 +154,13 @@ JPDLC_ISSET_PIN_STATUS JpDrvLicNfcCommandConventional::issetPin(void){
 }
 
 
-
-bool JpDrvLicNfcCommandConventional::isDrvLicCard(void){
-
-    JPDLC_CARD_STATUS card_status = JPDLC_STATUS_ERROR;
-
-    //AID_DF1 があるか
-    card_status = parseResponseSelectFile(
-        _nfcTransceive(
-            assemblyCommandSelectFile_AID(AID_DF1, sizeof(AID_DF1)/sizeof(AID_DF1[0]))
-        )
-    );
-
-    if(card_status == JPDLC_STATUS_ERROR){
-        return false;
-    }
-
-    //AID_DF2 があるか
-    card_status = parseResponseSelectFile(
-        _nfcTransceive(
-            assemblyCommandSelectFile_AID(AID_DF2, sizeof(AID_DF2)/sizeof(AID_DF2[0]))
-        )
-    );
-
-    if(card_status == JPDLC_STATUS_ERROR){
-        return false;
-    }
-
-    //AID_DF3 があるか
-    card_status = parseResponseSelectFile(
-        _nfcTransceive(
-            assemblyCommandSelectFile_AID(AID_DF3, sizeof(AID_DF3)/sizeof(AID_DF3[0]))
-        )
-    );
-
-    if(card_status == JPDLC_STATUS_ERROR){
-        return false;
-    }
-
-    //ここまでreturn されなければOK
-    return true;
-}
-
+/**
+ * @brief  従来免許証の共通データ要素(VERIFY不要領域)から有効期限を取得する
+ * @param  なし
+ * @return 成功時：有効期限 YYYY/M/D　失敗時：0年0月0日
+ * @retval JPDLC_EXPIRATION_DATA 有効期限データ構造体
+ * @note   従来免許証と通信確立された実行する ※VERIFY不要
+ */
 JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandConventional::getExpirationData(void){
 
     //MFがセレクトされている前提
@@ -180,6 +210,13 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandConventional::getExpirationData(void){
     return expirationData;
 }
 
+/**
+ * @brief  従来免許証の PIN 1 残り照合回数を取得する
+ * @param  なし
+ * @return 成功時：残り照合回数　失敗時：0
+ * @note   従来免許証と通信確立された状態で実行する
+ *         ボディーなしの VERIFYコマンドを実行して確認する
+ */
 uint8_t JpDrvLicNfcCommandConventional::getRemainingCount(void){
     
     //MFをセレクト
@@ -205,7 +242,16 @@ uint8_t JpDrvLicNfcCommandConventional::getRemainingCount(void){
     return remainingCount;
 }
 
-
+/**
+ * @brief  従来免許証の PIN 1 を照合する
+ * @param  pin JIS X 0201 文字コードでコードされた PIN 1 または DPIN
+ * @retval true  : 照合成功
+ * @retval false : 照合失敗
+ * @note   従来免許証と通信確立された状態で実行する
+ *         ボディーありの VERIFYコマンドを実行して確認する
+ * @attention  失敗系をテストしたい場合は_nfcTransceive を _nfcTransceive_Stub に置き換える
+ *             本物を閉塞させると解除してもらいに免許センターに行く必要がある
+ */
 bool JpDrvLicNfcCommandConventional::executeVerify(type_PIN pin){
     
     //MFをセレクト
@@ -263,7 +309,13 @@ uint8_t JpDrvLicNfcCommandConventional::packedBCDtoInt(type_data_byte input){
 
   /* 以下は開発・テスト用 DLC starterでは使用しない */
 
-
+/**
+ * @brief  従来免許証の DF1/EF01 (VERIFYが必要な領域)から有効期限を取得する
+ * @param  なし
+ * @return 成功時：有効期限 YYYY/M/D　失敗時：0年0月0日
+ * @retval JPDLC_EXPIRATION_DATA 有効期限データ構造体
+ * @note   従来免許証と通信確立され、PIN 1 VERIFY成功の状態で実行する
+ */
   JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandConventional::getExpirationData_from_DF1_EF01(void){
 
     JPDLC_EXPIRATION_DATA expirationData = {0,0,0};
@@ -326,6 +378,7 @@ uint8_t JpDrvLicNfcCommandConventional::packedBCDtoInt(type_data_byte input){
     return expirationData;
 }
 
+//とりあえず長いデータ読むテスト用 用途無し
 std::vector<type_data_byte> JpDrvLicNfcCommandConventional::getSignature_from_DF1_EF07(void){
 
     std::vector<type_data_byte> retVect;

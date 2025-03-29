@@ -1,3 +1,8 @@
+/**
+ * @file jpdlc_base.cpp
+ * @brief ベースクラスの実装
+ */
+
 #include "jpdlc_base.h"
 
 //ToDo:リーダー内部バッファ上限で区切ってReadBinaryループ

@@ -1,3 +1,8 @@
+/**
+ * @file jpdlc_typedef.h
+ * @brief 共通で使うtypedef定義
+ */
+
 #ifndef JP_DRV_LIC_NFC_COMMAND_TYPEDEF_H
 #define JP_DRV_LIC_NFC_COMMAND_TYPEDEF_H
 

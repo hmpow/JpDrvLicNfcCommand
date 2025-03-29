@@ -1,3 +1,9 @@
+/** 
+ * @file jpdlc_base_reader_if.h
+ * @brief カードリーダーと接続する部分およびVERIFYコマンドテスト用のスタブ
+ * @note  _nfcTransceiveを使用するカードリーダに合わせて変更
+ */
+
 #ifndef JP_DRV_LIC_NFC_COMMAND_READER_IF_H
 #define JP_DRV_LIC_NFC_COMMAND_READER_IF_H
 

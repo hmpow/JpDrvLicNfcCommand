@@ -1,3 +1,8 @@
+/**
+ * @file jpdlc_base.h
+ * @brief ベースクラスの定義
+ */
+
 #ifndef JP_DRV_LIC_NFC_COMMAND_BASE_H
 #define JP_DRV_LIC_NFC_COMMAND_BASE_H
 

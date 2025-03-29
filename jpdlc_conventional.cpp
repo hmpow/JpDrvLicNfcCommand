@@ -194,7 +194,7 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandConventional::getExpirationData(void){
 
     std::vector<type_data_byte> retVect;
 
-    retVect = readBinary_currentFile_specifiedTag(TAG_EXPIRATION_MF); 
+    retVect = readBinary_currentFile_specifiedTag(0,TAG_EXPIRATION_MF); 
     if(retVect.empty() == true){
         return expirationData;
     }
@@ -346,7 +346,7 @@ uint8_t JpDrvLicNfcCommandConventional::packedBCDtoInt(type_data_byte input){
     }
 
 
-    cardResVect = readBinary_currentFile_specifiedTag(TAG_EXPIRATION_EF01); 
+    cardResVect = readBinary_currentFile_specifiedTag(NO_OFFSET,TAG_EXPIRATION_EF01); 
 
     #ifdef DLC_LAYER_DEBUG
         printf("セキュア領域から読めた有効期限データ；");
@@ -408,7 +408,7 @@ std::vector<type_data_byte> JpDrvLicNfcCommandConventional::getSignature_from_DF
         return retVect;
     }
 
-    retVect = readBinary_currentFile_specifiedTag(TAG_SIGNATURE_EF07); 
+    retVect = readBinary_currentFile_specifiedTag(NO_OFFSET,TAG_SIGNATURE_EF07); 
 
     //テスト用関数のためチェックなどは省略
     //readBinary_currentFile_specifiedTagがテスト対象

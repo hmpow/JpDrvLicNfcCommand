@@ -34,6 +34,9 @@ const type_data_byte WEF01_PIN_SETTING_ON   = 0x01;   //仕様書指定値 PIN�
 const type_data_byte WEF01_PIN_SETTING_OFF  = 0x00;   //仕様書指定値 PIN設定無しの場合
 
 
+const uint16_t       SKIP_C2_C3_TAG         = 0x0004;  //tag探し関数で先頭の経歴証明用に取られたの4バイトスキップ
+
+
 /* コンストラクタ */
 
 JpDrvLicNfcCommandMynumber::JpDrvLicNfcCommandMynumber(){
@@ -163,17 +166,21 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandMynumber::getExpirationData(void){
     }
     
     //WEF02 免許情報のEF を選択
-    #ifdef DLC_LAYER_DEBUG
-        printf("WEF02 免許情報のEF を選択\r\n");
-    #endif
-    card_status = parseResponseSelectFile(
-        _nfcTransceive(
-            assemblyCommandSelectFile_fullEfId(FULL_FEID_WEF02_LICENSEDATA)
-        )
-    );
-    
-    if(card_status == JPDLC_STATUS_ERROR){
-        return expirationData; //0000/00/00
+    if(current_selected != INS_WEF02){
+        #ifdef DLC_LAYER_DEBUG
+            printf("WEF02 免許情報のEF を選択\r\n");
+        #endif
+        card_status = parseResponseSelectFile(
+            _nfcTransceive(
+                assemblyCommandSelectFile_fullEfId(FULL_FEID_WEF02_LICENSEDATA)
+            )
+        );
+        
+        if(card_status == JPDLC_STATUS_ERROR){
+            current_selected = NOT_SELECTED;
+            return expirationData; //0000/00/00
+        }
+        current_selected = INS_WEF02;
     }
 
     #ifdef DLC_LAYER_DEBUG
@@ -190,7 +197,7 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandMynumber::getExpirationData(void){
 
     cardResVect.clear();
 
-    cardResVect = readBinary_currentFile_specifiedTag(TAG_OF_EXPIRATION_DATA); 
+    cardResVect = readBinary_currentFile_specifiedTag(SKIP_C2_C3_TAG,TAG_OF_EXPIRATION_DATA); 
     
     #ifdef DLC_LAYER_DEBUG
         printf("セキュア領域から読めた有効期限データ；");
@@ -286,6 +293,9 @@ JPDLC_CARD_STATUS JpDrvLicNfcCommandMynumber::selectInsAid(){
     
     //処置不要
     if(current_selected == INS){
+        #ifdef DLC_LAYER_DEBUG
+            printf("selectInsAid::インスタンスAIDは選択済み\r\n");
+        #endif
         return JPDLC_STATUS_OK;
     }
 

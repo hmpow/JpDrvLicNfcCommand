@@ -28,6 +28,9 @@ typedef enum _jpdlc_mynumbercard_current_selected {
 
 class JpDrvLicNfcCommandMynumber : public JpDrvLicNfcCommandBase{
     public:
+
+    JpDrvLicNfcCommandMynumber();
+
     JPDLC_ISSET_PIN_STATUS issetPin(void) override;
     bool isDrvLicCard(void) override;
     JPDLC_EXPIRATION_DATA getExpirationData(void) override;

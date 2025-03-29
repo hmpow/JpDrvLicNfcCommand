@@ -33,7 +33,7 @@ JpDrvLicNfcCommandBase::~JpDrvLicNfcCommandBase(){
 /*******************************************************************************/
 
 //指定タグを線形探索して読む関数
-std::vector<type_data_byte> JpDrvLicNfcCommandBase::readBinary_currentFile_specifiedTag(type_tag tag){
+std::vector<type_data_byte> JpDrvLicNfcCommandBase::readBinary_currentFile_specifiedTag(const uint16_t startOffset, const type_tag tag){
 
     //現状1バイトタグのみ対応
     const type_data_byte targetTagByte = (type_data_byte)(tag & 0xFF); //下位8bit
@@ -43,7 +43,7 @@ std::vector<type_data_byte> JpDrvLicNfcCommandBase::readBinary_currentFile_speci
     std::vector<type_data_byte> cardResVect;
 
 
-    uint16_t currentOffset = 0;
+    uint16_t currentOffset = startOffset; //開始オフセット
     uint16_t len = 0;
     type_data_byte responseTag = 0x00;
     bool continueFlag = true;

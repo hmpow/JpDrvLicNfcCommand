@@ -194,7 +194,7 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandConventional::getExpirationData(void){
 
     std::vector<type_data_byte> retVect;
 
-    retVect = readBinary_currentFile_specifiedTag(0,TAG_EXPIRATION_MF); 
+    retVect = readBinary_currentFile_specifiedTag(NO_OFFSET,TAG_EXPIRATION_MF); 
     if(retVect.empty() == true){
         return expirationData;
     }

@@ -14,28 +14,28 @@ const type_data_byte AID_EXE[] = { 0xA0,0x00,0x00,0x02,0x31,0x05,0x00,0x00,0x00,
 const type_data_byte AID_INS[] = { 0xA0,0x00,0x00,0x02,0x31,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
 
 const type_full_efid FULL_FEID_WEF01_PINSETTING   = 0x001A; //PIN設定有無
+const type_full_efid FULL_FEID_WEF02_LICENSEDATA  = 0x001B; //免許情報
+const type_full_efid FULL_FEID_WEF03_SECURITYDATA = 0x001C; //電子署名や発行者識別情報など　使用しない
 
 const type_full_efid FULL_FEID_IEF01_PIN          = 0x0006; //PIN1の短縮EF 別紙3記載　⇒ こちらが正 63 CA (残り10回)が返ってくる
 
 //const type_full_efid FULL_FEID_IEF01_PIN_BETTEN   = 0x0002; //PIN1の短縮EF 別添3-1記載　⇒ 誤記っぽい 6A 82 (アクセス対象ファイル無し)が返ってくる
 
-const type_full_efid FULL_FEID_WEF02_LICENSEDATA  = 0x001B; //免許情報
-const type_full_efid FULL_FEID_WEF03_SECURITYDATA = 0x001C; //電子署名や発行者識別情報など　使用しない
-
 const uint16_t       LE_OF_WEF01            = 3;      //T,L,V 各1byte
 const type_tag       TAG_OF_WEF01           = 0x00C1; //PIN設定
+const type_data_byte WEF01_PIN_SETTING_ON         = 0x01;   //仕様書指定値 PIN設定ありの場合のVALUE値
+const type_data_byte WEF01_PIN_SETTING_OFF        = 0x00;   //仕様書指定値 PIN設定無しの場合のVALUE値
 
-const type_tag       TAG_OF_EXPIRATION_DATA = 0x00C5; //有効期限情報
-
+const uint16_t       LE_OF_EXPIRATION_DATA        = 7;      //有効期限情報のバイト数
+const type_tag       TAG_OF_EXPIRATION_DATA       = 0x00C5; //有効期限情報のTAG
 const type_data_byte REIWA_CODE             = 0x05;   //免許証仕様上の令和の識別コード
 
 const uint8_t        NO_OFFSET              = 0x00;
-const type_data_byte WEF01_PIN_SETTING_ON   = 0x01;   //仕様書指定値 PIN設定ありの場合
-const type_data_byte WEF01_PIN_SETTING_OFF  = 0x00;   //仕様書指定値 PIN設定無しの場合
 
-
-const uint16_t       SKIP_C2_C3_TAG         = 0x0004;  //tag探し関数で先頭の経歴証明用に取られたの4バイトスキップ
-
+//有効期限読み出しスピードアップ系
+const bool           READ_EXPIRATION_DIRECT       = true;    //TAG C3,C3は空, TAG C4 は3バイト固定としてTAG C5 の VALUE を直で読み出す
+const uint16_t       SKIP_C2_C3_TAG               = 0x0004;  //tag探し関数で先頭の経歴証明用に取られた先頭4バイトスキップ NO_OFFSETの代わりに渡す
+const uint8_t        OFFSET_EXPIRATION_DIRECT     = SKIP_C2_C3_TAG + 2 + 6 + 2; //C4 の T-L-V 分 + C5 の T-L 分
 
 /* コンストラクタ */
 
@@ -60,6 +60,9 @@ bool JpDrvLicNfcCommandMynumber::isDrvLicCard(void){
     JPDLC_CARD_STATUS card_status = JPDLC_STATUS_ERROR;
 
 #ifdef DLC_LAYER_DEBUG
+
+    current_selected = NOT_SELECTED;
+
     //AID_ELF があるか → 6a 82 になる デバッグのため残しておくが判定から除外
     printf("isDrvLicCard マイナ免許 AID_ELF を SELECT\r\n");
    
@@ -165,6 +168,30 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandMynumber::getExpirationData(void){
         return expirationData; //0000/00/00
     }
     
+
+    if(READ_EXPIRATION_DIRECT == true){
+        //速度最優先
+
+        #ifdef DLC_LAYER_DEBUG
+            printf("有効期限ダイレクト読み出し\r\n");
+        #endif
+
+        //WEF02 指定READBINARY で TAG C3,C3は空, TAG C4 は3バイト固定として TAG C5 の VALUE を直で読み出す
+        const type_short_efid sEfid_licData = _toShortEfid(FULL_FEID_WEF02_LICENSEDATA);
+
+        cardResVect = parseResponseReadBinary(
+                _nfcTransceive(
+                    assemblyCommandReadBinary_shortEFidentfy_OffsetAddr8bit(
+                        sEfid_licData, OFFSET_EXPIRATION_DIRECT, LE_OF_EXPIRATION_DATA
+                    )
+                )
+            );
+    }else{
+        //素直にタグ探しで読み出す
+        #ifdef DLC_LAYER_DEBUG
+            printf("素直にタグ探しで読み出す\r\n");
+        #endif
+        
     //WEF02 免許情報のEF を選択
     if(current_selected != INS_WEF02){
         #ifdef DLC_LAYER_DEBUG
@@ -172,7 +199,9 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandMynumber::getExpirationData(void){
         #endif
         card_status = parseResponseSelectFile(
             _nfcTransceive(
-                assemblyCommandSelectFile_fullEfId(FULL_FEID_WEF02_LICENSEDATA)
+                    assemblyCommandSelectFile_fullEfId(
+                        FULL_FEID_WEF02_LICENSEDATA
+                    )
             )
         );
         
@@ -197,7 +226,15 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandMynumber::getExpirationData(void){
 
     cardResVect.clear();
 
-    cardResVect = readBinary_currentFile_specifiedTag(SKIP_C2_C3_TAG,TAG_OF_EXPIRATION_DATA); 
+        //タグ探し関数で C5 を探して読みだす
+        //C2,C3の経歴情報が白紙であることが分かっている場合は第一引数 SKIP_C2_C3_TAG 指定し効率化
+        //C2,C3の経歴情報が白紙か分からない場合は NO_OFFSET を指定して頭から探す
+        //いわゆる経歴書のことだが、バイクと車持っていてバイクだけ返納した場合どのようなデータになるのか分からない
+        cardResVect = readBinary_currentFile_specifiedTag(
+            SKIP_C2_C3_TAG,TAG_OF_EXPIRATION_DATA
+        ); 
+    }
+  
     
     #ifdef DLC_LAYER_DEBUG
         printf("セキュア領域から読めた有効期限データ；");
@@ -212,7 +249,7 @@ JPDLC_EXPIRATION_DATA JpDrvLicNfcCommandMynumber::getExpirationData(void){
         return expirationData;
     }
 
-    if(cardResVect.size() > 7){
+    if(cardResVect.size() > LE_OF_EXPIRATION_DATA){
         return expirationData;
     }
 

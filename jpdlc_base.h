@@ -12,8 +12,6 @@
 #include "jpdlc_typedef.h"
 #include "jpdlc_base_reader_if.h"
 
-#define SHOW_DEBUG 1
-
 
 /*******************/
 /* 従来・マイナ共通 */

@@ -11,6 +11,14 @@ const uint16_t READER_TIMEOUT_MS = 200; //マイナ免許証は長めにしな�
 //カードリーダのインスタンスはmain.cppの持ち物なのでポインタで
 Rcs660sAppIf *p_rcs660sInstance;
 
+/**
+ * @brief  カードリーダインスタンスを接続する(アプリからインスタンスを貸し出す)
+ * @param  p_reader 事前にアプリ側でインスタンス化されたカードリーダインスタンスへのポインタ
+ * @note   アプリからNFCコマンドをやり取りできる状態まで準備されたインスタンスを借りる形になっている
+ *         カードリーダを変える場合は適切な型に変更が必要
+ *         JpDrvLicNfcCommand実行前にアプリ側でNFC捕捉～アクティブ化完了しNFCコマンドを受付可能な状態に準備
+ *         JpDrvLicNfcCommand破棄前にアプリ側でカードリーダドライバのインスタンス破棄しない
+ */
 void setReaderInstance(Rcs660sAppIf * const p_reader){
     p_rcs660sInstance = p_reader;
     return;

@@ -7,11 +7,9 @@
 #define JP_DRV_LIC_NFC_COMMAND_BASE_H
 
 /* 特定のカードリーダーに依存しない　コマンドを組み立てる機能＋レスポンスを解析する機能 */
-/* このクラスを書いていてカードリーダのマニュアルを見たくなったら責務配置がおかしい */
 
 #include "jpdlc_typedef.h"
 #include "jpdlc_base_reader_if.h"
-
 
 /*******************/
 /* 従来・マイナ共通 */
@@ -28,11 +26,6 @@ class JpDrvLicNfcCommandBase
 public:
     JpDrvLicNfcCommandBase();
     virtual ~JpDrvLicNfcCommandBase();
-
-
-    Rcs660sAppIf rcs660sInstance;
-    void setReader(const Rcs660sAppIf);
-
 
     /*********************************** 自動I/F ***********************************/
 
